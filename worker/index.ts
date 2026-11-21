@@ -836,6 +836,12 @@ export class ProbeHub implements DurableObject {
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const incoming = new URL(request.url)
+    if (incoming.pathname === '/login' || authRoutes.has(incoming.pathname)) {
+      return new Response('Not found', {
+        status: 404,
+        headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' },
+      })
+    }
     if (incoming.pathname === '/login') {
       if (request.method !== 'GET' && request.method !== 'HEAD') {
         return new Response('Method not allowed', { status: 405 })
