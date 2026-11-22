@@ -11,19 +11,22 @@ export function maskVisitorIp(ip: string): string {
 
 export async function lookupIpRisk(ip: string): Promise<{ ipType?: string; risk: number | null; proxy: 'yes' | 'no' | 'unknown' }> {
   try {
-    const res = await fetch(`https://proxycheck.io/v2/${encodeURIComponent(ip)}?vpn=1&asn=1&risk=1`, { signal: AbortSignal.timeout(2500) })
+    const res = await fetch(`https://api.ipquery.io/${encodeURIComponent(ip)}`, { signal: AbortSignal.timeout(2500) })
     if (!res.ok) return { risk: null, proxy: 'unknown' }
-    const json = await res.json() as Record<string, { type?: string; risk?: number; proxy?: string }>
-    const info = json?.[ip]
-    if (!info || typeof info !== 'object') return { risk: null, proxy: 'unknown' }
+    const json = await res.json() as { risk?: { is_mobile?: boolean; is_vpn?: boolean; is_tor?: boolean; is_proxy?: boolean; is_datacenter?: boolean; risk_score?: number } }
+    const r = json?.risk
+    if (!r || typeof r !== 'object') return { risk: null, proxy: 'unknown' }
+    const isProxy = !!(r.is_vpn || r.is_proxy || r.is_tor)
+    const ipType = r.is_vpn ? 'VPN' : r.is_proxy || r.is_tor ? 'Proxy' : r.is_datacenter ? 'Hosting' : r.is_mobile ? 'Wireless' : 'Residential'
     return {
-      ipType: typeof info.type === 'string' ? info.type : undefined,
-      risk: typeof info.risk === 'number' && Number.isFinite(info.risk) ? info.risk : null,
-      proxy: info.proxy === 'yes' || info.proxy === 'no' ? info.proxy : 'unknown',
+      ipType,
+      risk: typeof r.risk_score === 'number' && Number.isFinite(r.risk_score) ? r.risk_score : null,
+      proxy: isProxy ? 'yes' : 'no',
     }
   } catch {
     return { risk: null, proxy: 'unknown' }
-  }
+
+}
 }
 
 const bjDate = (now = Date.now()) => new Date(now + 8 * 3600_000).toISOString().slice(0, 10)
