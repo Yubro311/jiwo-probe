@@ -5,7 +5,7 @@ import { encodeProbeDelta, encodeProbeDeltaV2 } from '../src/probe-delta'
 import { SETUP_ERROR_HEADER, missingSetupVars } from '../src/probe-setup'
 import type { ProbePayload } from '../src/types'
 
-import { maskVisitorIp, readVisitorLogs, recordVisitorLog, type VisitorEntry } from './visitor-log'
+import { lookupIpRisk, readVisitorLogs, recordVisitorLog, type VisitorEntry } from './visitor-log'
 
 interface Env {
   ASSETS: Fetcher
@@ -922,19 +922,20 @@ export default {
       const res = await hubStub(env).fetch('https://probe-hub/visitor-logs')
       return new Response(res.body, { status: res.status, headers: { 'Cache-Control': 'private, no-store', 'Content-Type': 'application/json; charset=utf-8', 'X-Content-Type-Options': 'nosniff' } })
     }
-    if (incoming.pathname === '/api/visitor') {
+        if (incoming.pathname === '/api/visitor') {
       if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 })
       const cf = request.cf, rawIp = request.headers.get('CF-Connecting-IP') || 'UNKNOWN'
       const num = (v: unknown) => (typeof v === 'string' || typeof v === 'number') && Number.isFinite(Number(v)) ? Number(v) : undefined
+      const riskInfo: { ipType?: string; risk: number | null; proxy: 'yes' | 'no' | 'unknown' } = rawIp !== 'UNKNOWN' ? await lookupIpRisk(rawIp) : { risk: null, proxy: 'unknown' }
       let stats: { today?: number; total?: number; recent?: unknown[] } = {}
       if (rawIp !== 'UNKNOWN') {
         try {
-          const r = await hubStub(env).fetch('https://probe-hub/visitor-record', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ip: rawIp, city: typeof cf?.city === 'string' ? cf.city : undefined, region: typeof cf?.region === 'string' ? cf.region : undefined, country: typeof cf?.country === 'string' ? cf.country : undefined, isp: typeof cf?.asOrganization === 'string' ? cf.asOrganization : undefined, asn: num(cf?.asn), colo: typeof cf?.colo === 'string' ? cf.colo : undefined, ua: request.headers.get('User-Agent') || undefined }) })
+          const r = await hubStub(env).fetch('https://probe-hub/visitor-record', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ip: rawIp, city: typeof cf?.city === 'string' ? cf.city : undefined, region: typeof cf?.region === 'string' ? cf.region : undefined, country: typeof cf?.country === 'string' ? cf.country : undefined, isp: typeof cf?.asOrganization === 'string' ? cf.asOrganization : undefined, asn: num(cf?.asn), colo: typeof cf?.colo === 'string' ? cf.colo : undefined, ua: request.headers.get('User-Agent') || undefined, ipType: riskInfo.ipType, risk: riskInfo.risk, proxy: riskInfo.proxy }) })
           if (r.ok) stats = await r.json() as typeof stats
         } catch {}
       }
-      return Response.json({ ip: rawIp === 'UNKNOWN' ? 'UNKNOWN' : maskVisitorIp(rawIp), city: cf?.city, region: cf?.region, country: cf?.country, isp: cf?.asOrganization, colo: cf?.colo, lat: num(cf?.latitude), lon: num(cf?.longitude), today: stats.today, total: stats.total, recent: stats.recent ?? [], risk: null, proxy: 'unknown', type: '' }, { headers: { 'Cache-Control': 'private, no-store', 'Content-Type': 'application/json; charset=utf-8', 'X-Content-Type-Options': 'nosniff' } })
-    }
+      return Response.json({ ip: rawIp, city: cf?.city, region: cf?.region, country: cf?.country, isp: cf?.asOrganization, asn: num(cf?.asn), colo: cf?.colo, lat: num(cf?.latitude), lon: num(cf?.longitude), today: stats.today, total: stats.total, recent: stats.recent ?? [], ipType: riskInfo.ipType, risk: riskInfo.risk, proxy: riskInfo.proxy, type: riskInfo.ipType || '' }, { headers: { 'Cache-Control': 'private, no-store', 'Content-Type': 'application/json; charset=utf-8', 'X-Content-Type-Options': 'nosniff' } })
+        }
 
     const target = upstreamURL(request, env)
     if (!target) {
