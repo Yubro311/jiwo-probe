@@ -5,6 +5,8 @@ import { encodeProbeDelta, encodeProbeDeltaV2 } from '../src/probe-delta'
 import { SETUP_ERROR_HEADER, missingSetupVars } from '../src/probe-setup'
 import type { ProbePayload } from '../src/types'
 
+import { maskVisitorIp, readVisitorLogs, recordVisitorLog, type VisitorEntry } from './visitor-log'
+
 interface Env {
   ASSETS: Fetcher
   MMWX_ORIGIN: string
@@ -507,6 +509,12 @@ export class ProbeHub implements DurableObject {
     const url = new URL(request.url)
     if (url.pathname === '/stream') return this.openClient(request)
     if (url.pathname === '/snapshot') return this.snapshot()
+
+    
+    if (url.pathname === '/visitor-record' && request.method === 'POST') return Response.json(await recordVisitorLog(this.state.storage, await request.json() as Omit<VisitorEntry, 'at'>))
+    if (url.pathname === '/visitor-logs' && request.method === 'GET') return Response.json(await readVisitorLogs(this.state.storage))
+      
+    
     return new Response('Not found', { status: 404 })
   }
 
@@ -908,35 +916,24 @@ export default {
     }
 
     // 访客信息（Ran 主题访客浮卡用）——直接读 CF 请求头，不调用第三方
+        if (incoming.pathname === '/api/visitor-logs') {
+      if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 })
+      if (!env.PROBE_TOKEN || request.headers.get('X-MMwx-Probe-Token') !== env.PROBE_TOKEN) return new Response('Not found', { status: 404, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } })
+      const res = await hubStub(env).fetch('https://probe-hub/visitor-logs')
+      return new Response(res.body, { status: res.status, headers: { 'Cache-Control': 'private, no-store', 'Content-Type': 'application/json; charset=utf-8', 'X-Content-Type-Options': 'nosniff' } })
+    }
     if (incoming.pathname === '/api/visitor') {
       if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 })
-      const cf = request.cf
-      const optionalNumber = (value: unknown): number | undefined => {
-        if (typeof value !== 'string' && typeof value !== 'number') return undefined
-        const parsed = Number(value)
-        return Number.isFinite(parsed) ? parsed : undefined
+      const cf = request.cf, rawIp = request.headers.get('CF-Connecting-IP') || 'UNKNOWN'
+      const num = (v: unknown) => (typeof v === 'string' || typeof v === 'number') && Number.isFinite(Number(v)) ? Number(v) : undefined
+      let stats: { today?: number; total?: number; recent?: unknown[] } = {}
+      if (rawIp !== 'UNKNOWN') {
+        try {
+          const r = await hubStub(env).fetch('https://probe-hub/visitor-record', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ip: rawIp, city: typeof cf?.city === 'string' ? cf.city : undefined, region: typeof cf?.region === 'string' ? cf.region : undefined, country: typeof cf?.country === 'string' ? cf.country : undefined, isp: typeof cf?.asOrganization === 'string' ? cf.asOrganization : undefined, asn: num(cf?.asn), colo: typeof cf?.colo === 'string' ? cf.colo : undefined, ua: request.headers.get('User-Agent') || undefined }) })
+          if (r.ok) stats = await r.json() as typeof stats
+        } catch {}
       }
-      return Response.json(
-        {
-          ip: request.headers.get('CF-Connecting-IP') || 'UNKNOWN',
-          city: cf?.city,
-          region: cf?.region,
-          country: cf?.country,
-          isp: cf?.asOrganization,
-          lat: optionalNumber(cf?.latitude),
-          lon: optionalNumber(cf?.longitude),
-          risk: null,
-          proxy: 'unknown',
-          type: '',
-        },
-        {
-          headers: {
-            'Cache-Control': 'private, no-store',
-            'Content-Type': 'application/json; charset=utf-8',
-            'X-Content-Type-Options': 'nosniff',
-          },
-        },
-      )
+      return Response.json({ ip: rawIp === 'UNKNOWN' ? 'UNKNOWN' : maskVisitorIp(rawIp), city: cf?.city, region: cf?.region, country: cf?.country, isp: cf?.asOrganization, colo: cf?.colo, lat: num(cf?.latitude), lon: num(cf?.longitude), today: stats.today, total: stats.total, recent: stats.recent ?? [], risk: null, proxy: 'unknown', type: '' }, { headers: { 'Cache-Control': 'private, no-store', 'Content-Type': 'application/json; charset=utf-8', 'X-Content-Type-Options': 'nosniff' } })
     }
 
     const target = upstreamURL(request, env)
