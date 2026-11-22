@@ -170,9 +170,13 @@ function enrichPayload(payload: ProbePayload): ProbePayload {
 // 主控关闭“显示服务器名称”时，旧版接口仍可能带 name。展示层统一替换为
 // 稳定的序号名称；历史合并已在此之前按真实名称完成，不会污染内部缓存。
 function applyPayloadVisibility(payload: ProbePayload): ProbePayload {
-  if (payload.show_name !== false || !payload.servers?.length) return payload
+  const customBadge = [{ name: '一切福田，不离方寸；从心而觅，感无不通', display_name: '' }]
+  if (payload.show_name !== false || !payload.servers?.length) {
+    return { ...payload, license_badge: customBadge }
+  }
   return {
     ...payload,
+    license_badge: customBadge,
     servers: payload.servers.map((server, index) => ({
       ...server,
       name: `服务器 ${index + 1}`,
