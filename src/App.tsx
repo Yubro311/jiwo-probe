@@ -25,6 +25,8 @@ import { Meter, systemTitle, SystemIcon, routeCarrierLabels, goldRoutes, display
 import { LUMINA_QUOTA_SEGMENTS } from './components/LuminaHealthBars'
 import { ProbeLicenseBar } from './components/ProbeLicenseBar'
 import { ProbeHeaderLicense } from './components/ProbeHeaderLicense'
+
+import { VisitorToast } from './components/VisitorToast'
 import { globeCountryCode, regionGroupLabel } from './globe-regions'
 import { PROBE_ALERT_PCT, PROBE_SORT_KEYS, PROBE_SORT_LABELS, connectionTotals, dailyTrafficTotals, formatCapacity, formatSize, meterTone, networkQuality, kpiColumns, probeHealthIssue, quotaSummary, relativeTime, sortProbeServers, type ProbeHealthIssue, type ProbeSortKey } from './probe-overview'
 
@@ -1666,6 +1668,9 @@ function ProbeApp({ data, error }: ReturnType<typeof useProbe>) {
           showHealthScore={data?.show_health_score === true}
         />
       )}
+      
+<VisitorToast />
+
     </div>
   )
 }
