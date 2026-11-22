@@ -5801,3 +5801,6 @@ body.emerald-body:not(.emerald-dark-body) .provider-logo-invert {
 .visitor-tag--low{color:#059669;border-color:rgba(16,185,129,.35);background:rgba(16,185,129,.1)}
 .visitor-tag--mid{color:#d97706;border-color:rgba(245,158,11,.35);background:rgba(245,158,11,.1)}
 .visitor-tag--high{color:#dc2626;border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.1)}
+
+
+.visitor-toast{background:#ffffff!important}:root.dark .visitor-toast{background:#111827!important}
