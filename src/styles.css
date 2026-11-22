@@ -5794,3 +5794,10 @@ body.emerald-body:not(.emerald-dark-body) .provider-logo-invert {
 .visitor-toast-row{display:flex;align-items:center;justify-content:space-between;gap:6px}
 .visitor-toast-bar{position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--primary);opacity:.55;transform-origin:left;animation:visitor-bar 8s linear forwards}
 .visitor-toast-bar.paused{animation-play-state:paused}
+
+
+.visitor-toast-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.visitor-tag{display:inline-flex;align-items:center;padding:1px 6px;border-radius:999px;border:1px solid var(--border);background:color-mix(in srgb,var(--foreground) 5%,transparent);font-size:10.5px;color:var(--muted);line-height:1.45}
+.visitor-tag--low{color:#059669;border-color:rgba(16,185,129,.35);background:rgba(16,185,129,.1)}
+.visitor-tag--mid{color:#d97706;border-color:rgba(245,158,11,.35);background:rgba(245,158,11,.1)}
+.visitor-tag--high{color:#dc2626;border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.1)}
