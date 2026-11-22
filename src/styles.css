@@ -5781,7 +5781,7 @@ body.emerald-body:not(.emerald-dark-body) .provider-logo-invert {
 @media (max-width:640px){.topbar:has(.probe-header-license)>div{flex-wrap:wrap;row-gap:6px}.probe-header-license .probe-license-text{font-size:12px}}
 @keyframes visitor-bar{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 @keyframes visitor-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-.visitor-toast{position:fixed;right:16px;bottom:16px;z-index:60;width:min(320px,calc(100vw - 24px));padding:11px 13px 13px;border:1px solid var(--border);border-radius:var(--radius);background:color-mix(in srgb,var(--surface) 84%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:var(--shadow);color:var(--foreground);font-size:12px;overflow:hidden;animation:visitor-in .28s ease-out}
+.visitor-toast{position:fixed;right:16px;bottom:16px;z-index:999;width:min(320px,calc(100vw - 24px));padding:11px 13px 13px;border:1px solid var(--border);border-radius:var(--radius);background:color-mix(in srgb,var(--surface) 96%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 12px 32px rgba(15,23,42,.16);color:var(--foreground);font-size:12px;overflow:hidden;animation:visitor-in .28s ease-out}
 .visitor-toast-head{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:600}
 .visitor-toast-title{display:inline-flex;align-items:center;gap:6px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .visitor-toast-dot{width:7px;height:7px;border-radius:50%;background:#10b981;flex-shrink:0}
