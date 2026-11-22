@@ -23,7 +23,7 @@ export function VisitorToast() {
   useEffect(() => {
     let cancelled = false
     fetch('/api/visitor', { cache: 'no-store' })
-      .then((res) => (res.ok ? res.json() : null))
+            .then((res) => (res.ok ? (res.json() as Promise<VisitorPayload>) : null))
       .then((payload: VisitorPayload | null) => {
         if (cancelled || !payload || !payload.ip || payload.ip === 'UNKNOWN') return
         setData(payload)
