@@ -1,5 +1,5 @@
 const KEY = 'probe-visitor-logs-v1'
-export interface VisitorEntry { at: number; ip: string; country?: string; region?: string; city?: string; isp?: string; asn?: number; colo?: string; ua?: string }
+export interface VisitorEntry { at: number; ip: string; country?: string; region?: string; city?: string; isp?: string; asn?: number; colo?: string; ua?: string; ipType?: string; risk?: number | null; proxy?: string }
 export interface VisitorStore { total: number; todayDate: string; today: number; entries: VisitorEntry[] }
 
 export function maskVisitorIp(ip: string): string {
@@ -7,6 +7,23 @@ export function maskVisitorIp(ip: string): string {
   if (/^\d+\.\d+\.\d+\.\d+$/.test(raw)) return `${raw.split('.').slice(0, 2).join('.')}.*.*`
   if (raw.includes(':')) return `${raw.split(':').slice(0, 2).join(':')}:*:*`
   return '***'
+}
+
+export async function lookupIpRisk(ip: string): Promise<{ ipType?: string; risk: number | null; proxy: 'yes' | 'no' | 'unknown' }> {
+  try {
+    const res = await fetch(`https://proxycheck.io/v2/${encodeURIComponent(ip)}?vpn=1&asn=1&risk=1`, { signal: AbortSignal.timeout(2500) })
+    if (!res.ok) return { risk: null, proxy: 'unknown' }
+    const json = await res.json() as Record<string, { type?: string; risk?: number; proxy?: string }>
+    const info = json?.[ip]
+    if (!info || typeof info !== 'object') return { risk: null, proxy: 'unknown' }
+    return {
+      ipType: typeof info.type === 'string' ? info.type : undefined,
+      risk: typeof info.risk === 'number' && Number.isFinite(info.risk) ? info.risk : null,
+      proxy: info.proxy === 'yes' || info.proxy === 'no' ? info.proxy : 'unknown',
+    }
+  } catch {
+    return { risk: null, proxy: 'unknown' }
+  }
 }
 
 const bjDate = (now = Date.now()) => new Date(now + 8 * 3600_000).toISOString().slice(0, 10)
