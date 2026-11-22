@@ -5773,3 +5773,8 @@ body.gm-body.gm-light-body .provider-logo-invert,
 body.emerald-body:not(.emerald-dark-body) .provider-logo-invert {
   filter: none;
 }
+:root.probe-custom-background .app-shell{position:relative;isolation:isolate;background:transparent!important}
+:root.probe-custom-background .app-shell::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;background-color:var(--page-bg,#edf3f5);background-image:linear-gradient(rgb(237 245 247/var(--probe-background-overlay,.32)),rgb(231 241 244/var(--probe-background-overlay,.32))),var(--probe-background-image);background-repeat:no-repeat;background-position:center,var(--probe-background-position,center);background-size:cover}
+:root.dark.probe-custom-background .app-shell::before,:root.gold.probe-custom-background .app-shell::before{background-image:linear-gradient(rgb(5 15 24/var(--probe-background-overlay,.32)),rgb(7 20 29/var(--probe-background-overlay,.32))),var(--probe-background-image)}
+:root.platinum.probe-custom-background .app-shell::before{background-image:linear-gradient(rgb(246 242 232/var(--probe-background-overlay,.32)),rgb(239 235 225/var(--probe-background-overlay,.32))),var(--probe-background-image)}
+:root.probe-custom-background.theme-flat .kpi-panel,:root.probe-custom-background.theme-flat .server-card,:root.probe-custom-background.theme-flat .probe-toolbar,:root.probe-custom-background.theme-flat .leaderboard-card,:root.probe-custom-background.theme-flat .probe-forward{background:color-mix(in srgb,var(--surface) 78%,transparent);backdrop-filter:blur(8px)}
