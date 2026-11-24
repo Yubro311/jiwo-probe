@@ -9,7 +9,20 @@ export function maskVisitorIp(ip: string): string {
   return '***'
 }
 
-export async function lookupIpRisk(ip: string): Promise<{ ipType?: string; risk: number | null; proxy: 'yes' | 'no' | 'unknown' }> {
+type IpRiskResult = { ipType?: string; risk: number | null; proxy: 'yes' | 'no' | 'unknown' }
+
+export async function lookupIpRisk(ip: string): Promise<IpRiskResult> {
+  const cacheKey = new Request(`https://ipquery-cache.internal/v1/${encodeURIComponent(ip)}`, { method: 'GET' })
+  const defaultCache = typeof caches !== 'undefined' ? (caches as unknown as { default?: Cache }).default : undefined
+  if (defaultCache) {
+    try {
+      const cached = await defaultCache.match(cacheKey)
+      if (cached) return await cached.json() as IpRiskResult
+    } catch {
+      // ignore cache read errors
+    }
+  }
+
   try {
     const res = await fetch(`https://api.ipquery.io/${encodeURIComponent(ip)}`, { signal: AbortSignal.timeout(2500) })
     if (!res.ok) return { risk: null, proxy: 'unknown' }
@@ -18,15 +31,27 @@ export async function lookupIpRisk(ip: string): Promise<{ ipType?: string; risk:
     if (!r || typeof r !== 'object') return { risk: null, proxy: 'unknown' }
     const isProxy = !!(r.is_vpn || r.is_proxy || r.is_tor)
     const ipType = r.is_vpn ? 'VPN' : r.is_proxy || r.is_tor ? 'Proxy' : r.is_datacenter ? 'Hosting' : r.is_mobile ? 'Wireless' : 'Residential'
-    return {
+    const data: IpRiskResult = {
       ipType,
       risk: typeof r.risk_score === 'number' && Number.isFinite(r.risk_score) ? r.risk_score : null,
       proxy: isProxy ? 'yes' : 'no',
     }
+    if (defaultCache) {
+      try {
+        await defaultCache.put(
+          cacheKey,
+          new Response(JSON.stringify(data), {
+            headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=600' },
+          }),
+        )
+      } catch {
+        // ignore cache write errors
+      }
+    }
+    return data
   } catch {
     return { risk: null, proxy: 'unknown' }
-
-}
+  }
 }
 
 const bjDate = (now = Date.now()) => new Date(now + 8 * 3600_000).toISOString().slice(0, 10)
