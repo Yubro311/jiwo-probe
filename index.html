@@ -1,11 +1,21 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="probe-custom-background" style="--probe-background-image: url('/images/anime-wallpaper.jpg'); --probe-background-overlay: 0.32; --probe-background-position: center;">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
     <title>服务器状态</title>
     <link rel="preload" as="image" href="/images/anime-wallpaper.jpg" fetchpriority="high" />
+    <style>
+      html, body {
+        background-color: #edf3f5;
+        background-image: linear-gradient(rgba(237, 245, 247, 0.32), rgba(231, 241, 244, 0.32)), url('/images/anime-wallpaper.jpg');
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: cover;
+        background-attachment: fixed;
+      }
+    </style>
     <!-- 不等主程序下载完才请求首帧数据：主程序和数据同时下载，慢线路上能省下一整段等待。use-probe.ts 会接手这个请求。 -->
     <script>window.__probeFirstFetch = fetch('/api/probe', { cache: 'no-store' }).catch(function () { return null })</script>
   </head>
