@@ -5804,3 +5804,4 @@ body.emerald-body:not(.emerald-dark-body) .provider-logo-invert {
 
 
 .visitor-toast{background:#ffffff!important}:root.dark .visitor-toast{background:#111827!important}
+@keyframes bg-fade-in{from{opacity:0}to{opacity:1}}:root.probe-custom-background .app-shell::before{animation:bg-fade-in .35s ease-out}
